@@ -70,10 +70,12 @@ func (a *aead) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	}
 	s.init(&a.key, nonce)
 	s.process(additionalData)
-	ci := s.crypt(plaintext, 0)
-	tag := s.finalize()
-	dst = append(dst, ci...)
-	dst = append(dst, tag...)
+	i := len(dst)
+	j := i + len(plaintext)
+	k := j + TagSize
+	dst = append(dst, make([]byte, len(plaintext)+TagSize)...)
+	s.crypt(dst[i:j], plaintext, 0)
+	s.finalize(dst[j:k])
 	return dst
 }
 
@@ -86,8 +88,9 @@ func (a *aead) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, erro
 	n := len(ciphertext) - TagSize
 	data := ciphertext[:n]
 	tag := ciphertext[n:]
-	pl := s.crypt(data, one)
-	expectedTag := s.finalize()
+	pl := make([]byte, n)
+	s.crypt(pl, data, one)
+	expectedTag := s.finalize(make([]byte, TagSize))
 	if subtle.ConstantTimeCompare(tag, expectedTag) == 0 {
 		return dst, errDecryption
 	}

@@ -11,16 +11,24 @@ import (
 var sink uint32
 
 func TestAcorn(t *testing.T) {
-	k := []byte(strings.Repeat("password", 2))
+	key := []byte(strings.Repeat("password", 2))
 	iv := []byte(strings.Repeat("randomiv", 2))
 	p := []byte("message")
 
-	var s state
-	s.init(u32key(k), iv)
-	s.process(nil)
-	s.crypt(p, 0)
+	k := &[4]uint32{
+		binary.LittleEndian.Uint32(key[0*4:]),
+		binary.LittleEndian.Uint32(key[1*4:]),
+		binary.LittleEndian.Uint32(key[2*4:]),
+		binary.LittleEndian.Uint32(key[3*4:]),
+	}
 
-	tag := hex.EncodeToString(s.finalize())
+	var s state
+	s.init(k, iv)
+	s.process(nil)
+	ci := make([]byte, len(p))
+	s.crypt(ci, p, 0)
+
+	tag := hex.EncodeToString(s.finalize(make([]byte, TagSize)))
 	expectedTag := "f6881c28983aff930ad198968a401846"
 	if tag != expectedTag {
 		t.Errorf("got %s, want %s", tag, expectedTag)
@@ -66,24 +74,6 @@ func BenchmarkSeal(b *testing.B) {
 	}
 	b.Run("8", func(b *testing.B) { bench(b, 8) })
 	b.Run("4096", func(b *testing.B) { bench(b, 4096) })
-}
-
-func u32key(key []byte) *[4]uint32 {
-	return &[4]uint32{
-		binary.LittleEndian.Uint32(key[0*4:]),
-		binary.LittleEndian.Uint32(key[1*4:]),
-		binary.LittleEndian.Uint32(key[2*4:]),
-		binary.LittleEndian.Uint32(key[3*4:]),
-	}
-}
-
-func encrypt(k, iv, text []byte) []byte {
-	var s state
-	s.init(u32key(k), iv)
-	s.process(nil)
-	ci := s.crypt(text, 0)
-	tag := s.finalize()
-	return append(ci, tag...)
 }
 
 var testVectors = []struct {

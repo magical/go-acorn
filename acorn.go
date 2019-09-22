@@ -147,32 +147,29 @@ func (s *state) process(ad []uint8) {
 	s.pad(one)
 }
 
-func (s *state) crypt(data []uint8, mode uint32) []uint8 {
-	out := make([]uint8, len(data))
+func (s *state) crypt(dst, src []uint8, mode uint32) {
 	i := 0
-	for ; i+4 <= len(data); i += 4 {
-		x := binary.LittleEndian.Uint32(data[i:])
+	for ; i+4 <= len(src); i += 4 {
+		x := binary.LittleEndian.Uint32(src[i:])
 		ks := s.update32(uint32(x), one, mode)
 		x ^= ks
-		binary.LittleEndian.PutUint32(out[i:], x)
+		binary.LittleEndian.PutUint32(dst[i:], x)
 	}
-	for ; i < len(data); i++ {
-		x := data[i]
+	for ; i < len(src); i++ {
+		x := src[i]
 		ks := s.update8(uint32(x), one, mode)
-		out[i] = x ^ uint8(ks)
+		dst[i] = x ^ uint8(ks)
 	}
 	s.pad(0)
-	return out
 }
 
-func (s *state) finalize() []uint8 {
+func (s *state) finalize(tag []uint8) []uint8 {
 	for i := 0; i < 640; i += 32 {
 		s.update32(0, one, one)
 	}
-	tag := make([]uint8, 0, 7)
-	for i := 640; i < 768; i += 8 {
+	for i := range tag[:16] {
 		ks := s.update8(0, one, one)
-		tag = append(tag, uint8(ks))
+		tag[i] = uint8(ks)
 	}
 	return tag
 }
