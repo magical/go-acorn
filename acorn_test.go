@@ -76,6 +76,32 @@ func BenchmarkSeal(b *testing.B) {
 	b.Run("4096", func(b *testing.B) { bench(b, 4096) })
 }
 
+func BenchmarkOpen(b *testing.B) {
+	bench := func(b *testing.B, bytes int) {
+		k := []byte(strings.Repeat("password", 2))
+		iv := []byte(strings.Repeat("randomiv", 2))
+		p := make([]byte, bytes)
+		b.ReportAllocs()
+		b.SetBytes(int64(len(p)))
+		a := NewAEAD(k)
+		ci := a.Seal(nil, iv, p, nil)
+		b.ResetTimer()
+		var x byte
+		var dst []byte
+		var err error
+		for i := 0; i < b.N; i++ {
+			dst, err = a.Open(dst[:0], iv, ci, nil)
+			if err != nil {
+				b.Fatal(err)
+			}
+			x ^= dst[0]
+		}
+		sink = uint32(x)
+	}
+	b.Run("8", func(b *testing.B) { bench(b, 8) })
+	b.Run("4096", func(b *testing.B) { bench(b, 4096) })
+}
+
 var testVectors = []struct {
 	key        []uint8
 	plaintext  []uint8
