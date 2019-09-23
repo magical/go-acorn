@@ -40,7 +40,6 @@ type aead struct {
 // New returns a ACORN instance that uses the given 128-bit key.
 // If the key is not the correct length, NewAEAD will panic.
 func NewAEAD(key []byte) cipher.AEAD {
-	var a aead
 	if len(key) != KeySize {
 		panic("acorn: invalid key length")
 	}
@@ -52,7 +51,6 @@ func NewAEAD(key []byte) cipher.AEAD {
 			binary.LittleEndian.Uint32(key[3*4:]),
 		},
 	}
-	return &a
 }
 
 func (a *aead) NonceSize() int {
