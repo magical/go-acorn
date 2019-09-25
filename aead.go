@@ -17,11 +17,14 @@
 //        should not be given as output
 //
 // Please note that repeating a nonce may allow an attacker to trivially forge arbitrary messages.
+// Nonces should either be chosen at random (such as with RandomNonce)
+// or assigned sequentially in a manner guaranteed never to repeat.
 //
 package acorn
 
 import (
 	"crypto/cipher"
+	cryptorand "crypto/rand"
 	"crypto/subtle"
 	"encoding/binary"
 	"errors"
@@ -94,4 +97,27 @@ func (a *aead) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, erro
 	}
 	dst = append(dst, pl...)
 	return dst, nil
+}
+
+// RandomKey returns a securely-generated random 16-byte key.
+func RandomKey() []uint8 {
+	k := make([]byte, 16)
+	_, err := cryptorand.Read(k)
+	if err != nil {
+		panic(err)
+	}
+	return k
+}
+
+// RandomNonce returns a securely-generated random 16-byte nonce
+// suitable for passing to Seal.
+func RandomNonce() []uint8 {
+	// ACORN-128 uses a 128-bit nonce, which is large enough that
+	// it can be selected randomly without worrying about repeats.
+	iv := make([]byte, 16)
+	_, err := cryptorand.Read(iv)
+	if err != nil {
+		panic(err)
+	}
+	return iv
 }
