@@ -1,3 +1,5 @@
+// Copyright © 2019 Andrew Ekstedt. See LICENSE for details.
+
 // Package acorn implements the ACORN-128 authenticated encryption algorithm
 // designed by Hongjun Wu, as specified in
 //

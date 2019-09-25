@@ -1,3 +1,5 @@
+// Copyright © 2019 Andrew Ekstedt. See LICENSE for details.
+
 package acorn
 
 import "encoding/binary"
